@@ -1,0 +1,22 @@
+{
+  "name": "@meal-share/types",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/shared-types-barrel-export.js",
+  "types": "./dist/shared-types-barrel-export.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/shared-types-barrel-export.js",
+      "require": "./dist/shared-types-barrel-export.js",
+      "types": "./dist/shared-types-barrel-export.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

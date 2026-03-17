@@ -1,0 +1,22 @@
+{
+  "name": "@meal-share/utils",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/barrel-export-all-shared-utility-modules.js",
+  "types": "./dist/barrel-export-all-shared-utility-modules.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/barrel-export-all-shared-utility-modules.js",
+      "require": "./dist/barrel-export-all-shared-utility-modules.js",
+      "types": "./dist/barrel-export-all-shared-utility-modules.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

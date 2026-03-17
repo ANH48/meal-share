@@ -1,6 +1,6 @@
 ---
 title: "Phase 01 - Turborepo pnpm Monorepo Setup"
-status: pending
+status: complete
 priority: P1
 effort: 1.5h
 ---
@@ -186,19 +186,19 @@ meal-share/
     ```
 
 ## Todo List
-- [ ] Init root workspace with pnpm
-- [ ] Create pnpm-workspace.yaml
-- [ ] Install and configure Turborepo
-- [ ] Create Next.js 15 app with shadcn/ui
-- [ ] Create NestJS app with core dependencies
-- [ ] Create packages/types with initial type exports
-- [ ] Create packages/utils
-- [ ] Create packages/config with shared tsconfig + eslint
-- [ ] Wire workspace dependencies between apps and packages
-- [ ] Create docker-compose.yml for local PostgreSQL
-- [ ] Create .env.example and .gitignore
-- [ ] Verify `turbo dev` runs both apps
-- [ ] Verify `turbo build` succeeds
+- [x] Init root workspace with pnpm
+- [x] Create pnpm-workspace.yaml
+- [x] Install and configure Turborepo
+- [x] Create Next.js 15 app with shadcn/ui
+- [x] Create NestJS app with core dependencies
+- [x] Create packages/types with initial type exports
+- [x] Create packages/utils
+- [x] Create packages/config with shared tsconfig + eslint
+- [x] Wire workspace dependencies between apps and packages
+- [x] Create docker-compose.yml for local PostgreSQL
+- [x] Create .env.example and .gitignore
+- [x] Verify `turbo dev` runs both apps
+- [x] Verify `turbo build` succeeds
 
 ## Success Criteria
 - `turbo dev` starts Next.js on :3000, NestJS on :3001
@@ -217,4 +217,4 @@ meal-share/
 - Service role key only used server-side in NestJS
 
 ## Next Steps
-- Phase 02: Database Schema & Supabase setup
+- Phase 02: Database Schema & Supabase **setup**
