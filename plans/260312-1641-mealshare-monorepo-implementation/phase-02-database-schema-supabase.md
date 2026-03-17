@@ -347,16 +347,16 @@ daily_orders >── weekly_menu_items
     - Export enums: `GlobalRole`, `GroupMemberRole`, `WeeklyMenuStatus`, `VoteStatus`, `MessageType`
 
 ## Todo List
-- [ ] Initialize Prisma in apps/api
-- [ ] Define complete schema with all 11 models
-- [ ] Run migration against Supabase PostgreSQL
-- [ ] Create PrismaService and PrismaModule (global)
-- [ ] Create seed script with admin user and sample data
-- [ ] Enable Realtime on group_messages table
-- [ ] Create and apply RLS policies
-- [ ] Set up Supabase Storage bucket for menu images
-- [ ] Create SupabaseService in NestJS
-- [ ] Export shared types/enums to packages/types
+- [x] Initialize Prisma in apps/api
+- [x] Define complete schema with all 11 models
+- [ ] Run migration against Supabase PostgreSQL (blocked: DB paused)
+- [x] Create PrismaService and PrismaModule (global)
+- [x] Create seed script with admin user and sample data
+- [x] Enable Realtime on group_messages table (SQL ready: supabase/enable-realtime.sql)
+- [x] Create and apply RLS policies (SQL ready: supabase/rls-policies.sql)
+- [ ] Set up Supabase Storage bucket for menu images (manual: Supabase dashboard)
+- [x] Create SupabaseService in NestJS
+- [x] Export shared types/enums to packages/types
 
 ## Success Criteria
 - All tables created in Supabase PostgreSQL

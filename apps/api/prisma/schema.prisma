@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum GlobalRole {
+  admin
+  user
+}
+
+enum GroupMemberRole {
+  leader
+  participant
+}
+
+enum GroupMemberStatus {
+  active
+  removed
+}
+
+enum WeeklyMenuStatus {
+  draft
+  confirmed
+}
+
+enum VoteStatus {
+  open
+  closed
+  results
+}
+
+enum MessageType {
+  user
+  system
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique
+  name         String
+  passwordHash String?    @map("password_hash")
+  role         GlobalRole @default(user)
+  avatarUrl    String?    @map("avatar_url")
+  fcmToken     String?    @map("fcm_token")
+  googleId     String?    @unique @map("google_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  ledGroups          Group[]        @relation("GroupLeader")
+  memberships        GroupMember[]
+  createdMenuItems   MenuItem[]
+  createdWeeklyMenus WeeklyMenu[]
+  createdVotes       Vote[]
+  voteResponses      VoteResponse[]
+  dailyOrders        DailyOrder[]
+  sentMessages       GroupMessage[]
+  notifications      Notification[]
+
+  @@map("users")
+}
+
+model Group {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  description String?
+  leaderId   String   @map("leader_id") @db.Uuid
+  inviteCode String   @unique @map("invite_code")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  leader      User           @relation("GroupLeader", fields: [leaderId], references: [id])
+  members     GroupMember[]
+  weeklyMenus WeeklyMenu[]
+  votes       Vote[]
+  dailyOrders DailyOrder[]
+  messages    GroupMessage[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id        String            @id @default(uuid()) @db.Uuid
+  groupId   String            @map("group_id") @db.Uuid
+  userId    String            @map("user_id") @db.Uuid
+  role      GroupMemberRole   @default(participant)
+  status    GroupMemberStatus @default(active)
+  joinedAt  DateTime          @default(now()) @map("joined_at")
+  removedAt DateTime?         @map("removed_at")
+
+  group Group @relation(fields: [groupId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
+model MenuItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  imageUrl    String?  @map("image_url")
+  category    String?
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  creator         User             @relation(fields: [createdBy], references: [id])
+  weeklyMenuItems WeeklyMenuItem[]
+  voteOptions     VoteOption[]
+
+  @@map("menu_items")
+}
+
+model WeeklyMenu {
+  id            String           @id @default(uuid()) @db.Uuid
+  groupId       String           @map("group_id") @db.Uuid
+  weekStartDate DateTime         @map("week_start_date") @db.Date
+  status        WeeklyMenuStatus @default(draft)
+  createdBy     String           @map("created_by") @db.Uuid
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  group   Group          @relation(fields: [groupId], references: [id])
+  creator User           @relation(fields: [createdBy], references: [id])
+  items   WeeklyMenuItem[]
+
+  @@unique([groupId, weekStartDate, status])
+  @@map("weekly_menus")
+}
+
+model WeeklyMenuItem {
+  id           String  @id @default(uuid()) @db.Uuid
+  weeklyMenuId String  @map("weekly_menu_id") @db.Uuid
+  menuItemId   String  @map("menu_item_id") @db.Uuid
+  price        Decimal @db.Decimal(10, 2)
+  isAvailable  Boolean @default(true) @map("is_available")
+
+  weeklyMenu  WeeklyMenu   @relation(fields: [weeklyMenuId], references: [id])
+  menuItem    MenuItem     @relation(fields: [menuItemId], references: [id])
+  dailyOrders DailyOrder[]
+
+  @@map("weekly_menu_items")
+}
+
+model Vote {
+  id            String     @id @default(uuid()) @db.Uuid
+  groupId       String     @map("group_id") @db.Uuid
+  title         String
+  weekStartDate DateTime   @map("week_start_date") @db.Date
+  createdBy     String     @map("created_by") @db.Uuid
+  endsAt        DateTime   @map("ends_at")
+  status        VoteStatus @default(open)
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  group     Group          @relation(fields: [groupId], references: [id])
+  creator   User           @relation(fields: [createdBy], references: [id])
+  options   VoteOption[]
+  responses VoteResponse[]
+
+  @@map("votes")
+}
+
+model VoteOption {
+  id         String @id @default(uuid()) @db.Uuid
+  voteId     String @map("vote_id") @db.Uuid
+  menuItemId String @map("menu_item_id") @db.Uuid
+
+  vote      Vote           @relation(fields: [voteId], references: [id])
+  menuItem  MenuItem       @relation(fields: [menuItemId], references: [id])
+  responses VoteResponse[]
+
+  @@map("vote_options")
+}
+
+model VoteResponse {
+  id           String   @id @default(uuid()) @db.Uuid
+  voteId       String   @map("vote_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  voteOptionId String   @map("vote_option_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  vote       Vote       @relation(fields: [voteId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+  voteOption VoteOption @relation(fields: [voteOptionId], references: [id])
+
+  @@unique([voteId, userId])
+  @@map("vote_responses")
+}
+
+model DailyOrder {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  groupId          String   @map("group_id") @db.Uuid
+  date             DateTime @db.Date
+  weeklyMenuItemId String   @map("weekly_menu_item_id") @db.Uuid
+  quantity         Int      @default(1)
+  totalPrice       Decimal  @map("total_price") @db.Decimal(10, 2)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user           User           @relation(fields: [userId], references: [id])
+  group          Group          @relation(fields: [groupId], references: [id])
+  weeklyMenuItem WeeklyMenuItem @relation(fields: [weeklyMenuItemId], references: [id])
+
+  @@unique([userId, groupId, date, weeklyMenuItemId])
+  @@map("daily_orders")
+}
+
+model GroupMessage {
+  id        String      @id @default(uuid()) @db.Uuid
+  groupId   String      @map("group_id") @db.Uuid
+  senderId  String?     @map("sender_id") @db.Uuid
+  content   String
+  type      MessageType @default(user)
+  createdAt DateTime    @default(now()) @map("created_at")
+  editedAt  DateTime?   @map("edited_at")
+  deletedAt DateTime?   @map("deleted_at")
+
+  group  Group @relation(fields: [groupId], references: [id])
+  sender User? @relation(fields: [senderId], references: [id])
+
+  @@map("group_messages")
+}
+
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  title     String
+  body      String
+  type      String
+  data      Json?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}

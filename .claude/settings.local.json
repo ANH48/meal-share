@@ -18,7 +18,16 @@
       "Bash(pnpm install:*)",
       "Bash(turbo build:*)",
       "Bash(pnpm build:*)",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(pnpm prisma:*)",
+      "Bash(nc:*)",
+      "Bash(PGPASSWORD=p437WYWqYoFv1VoH psql \"postgresql://postgres.hycxsjesviwpucvnyeum:p437WYWqYoFv1VoH@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres\" -c \"SELECT 1;\" 2>&1)",
+      "Bash(PGPASSWORD=p437WYWqYoFv1VoH psql \"postgresql://postgres.hycxsjesviwpucvnyeum:p437WYWqYoFv1VoH@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres\" -c \"SELECT 1;\" 2>&1)",
+      "Bash(psql:*)",
+      "Bash(node:*)",
+      "Bash(find /Users/nhut/Documents/MyProject/Web/meal-share/apps/api/node_modules -name default.d.ts -path *prisma*)",
+      "Bash(find /Users/nhut/Documents/MyProject/Web/meal-share/node_modules -name default.d.ts -path *prisma*)",
+      "Bash(printf:*)"
     ]
   }
 }
