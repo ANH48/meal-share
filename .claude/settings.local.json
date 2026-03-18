@@ -27,7 +27,27 @@
       "Bash(node:*)",
       "Bash(find /Users/nhut/Documents/MyProject/Web/meal-share/apps/api/node_modules -name default.d.ts -path *prisma*)",
       "Bash(find /Users/nhut/Documents/MyProject/Web/meal-share/node_modules -name default.d.ts -path *prisma*)",
-      "Bash(printf:*)"
+      "Bash(printf:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(mkdir -p /Users/nhut/Documents/MyProject/Web/meal-share/apps/api/src/modules/auth/dto)",
+      "Bash(mkdir -p /Users/nhut/Documents/MyProject/Web/meal-share/apps/api/src/modules/auth/strategies)",
+      "Bash(mkdir -p /Users/nhut/Documents/MyProject/Web/meal-share/apps/api/src/modules/users)",
+      "Bash(mkdir -p /Users/nhut/Documents/MyProject/Web/meal-share/apps/api/src/common/guards)",
+      "Bash(mkdir -p /Users/nhut/Documents/MyProject/Web/meal-share/apps/api/src/common/decorators)",
+      "Bash(sed -i '' 's/JWT_SECRET=$/JWT_SECRET=02224530a66de75c1532b28b197a260d017fcf23cfef2818a192aa06ae4db34c/' /Users/nhut/Documents/MyProject/Web/meal-share/apps/api/.env)",
+      "Bash(sed -i '' 's/JWT_REFRESH_SECRET=$/JWT_REFRESH_SECRET=0a49650369e06a5332e96c6f6fc042f79063d92dface4ed56287ee91abbae16f/' /Users/nhut/Documents/MyProject/Web/meal-share/apps/api/.env)",
+      "Bash(npx prisma:*)",
+      "Bash(curl -s --connect-timeout 5 https://xmqfgjknijjsqfkxfkww.supabase.co)",
+      "Bash(curl -s --connect-timeout 5 https://api.github.com)",
+      "Bash(DIRECT_URL=\"postgresql://postgres.xmqfgjknijjsqfkxfkww:p437WYWqYoFv1VoH@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require\" npx prisma migrate dev --name \"init-all-tables-with-auth\" 2>&1)",
+      "Bash(PGPASSWORD=\"p437WYWqYoFv1VoH\" psql \"postgresql://postgres.xmqfgjknijjsqfkxfkww:p437WYWqYoFv1VoH@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require\" -c \"SELECT 1;\" 2>&1)",
+      "Bash(sed -i '' 's|postgres?pgbouncer=true |postgres?pgbouncer=true\\\\&sslmode=require|' /Users/nhut/Documents/MyProject/Web/meal-share/apps/api/.env)",
+      "Bash(sed -i '' 's|:5432/postgres$|:5432/postgres?sslmode=require|' /Users/nhut/Documents/MyProject/Web/meal-share/apps/api/.env)",
+      "Bash(PGSSLMODE=require npx prisma db push 2>&1)",
+      "Bash(npx tsc:*)",
+      "Bash(npx nest:*)",
+      "Bash(xargs kill:*)",
+      "Bash(pnpm remove:*)"
     ]
   }
 }

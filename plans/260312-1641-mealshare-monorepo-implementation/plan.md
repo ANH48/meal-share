@@ -32,7 +32,7 @@ Meal-sharing money management web app. Groups order food weekly, track expenses,
 |---|-------|--------|--------|------|
 | 01 | Turborepo pnpm Monorepo Setup | 1.5h | pending | [phase-01](./phase-01-turborepo-pnpm-monorepo-setup.md) |
 | 02 | Database Schema & Supabase | 2h | pending | [phase-02](./phase-02-database-schema-supabase.md) |
-| 03 | JWT RBAC Authentication System | 2.5h | pending | [phase-03](./phase-03-jwt-rbac-authentication-system.md) |
+| 03 | JWT RBAC Authentication System | 2.5h | complete | [phase-03](./phase-03-jwt-rbac-authentication-system.md) |
 | 04 | Admin Menu Catalog | 1.5h | pending | [phase-04](./phase-04-admin-menu-catalog.md) |
 | 05 | Group Management | 2h | pending | [phase-05](./phase-05-group-management.md) |
 | 06 | Weekly Menu & Food Voting System | 2.5h | pending | [phase-06](./phase-06-weekly-menu-management-and-food-voting-system.md) |
