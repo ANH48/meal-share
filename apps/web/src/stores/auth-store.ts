@@ -10,6 +10,14 @@ export interface AuthUser {
   role: string;
 }
 
+function decodeTokenPayload(token: string): { sub: string; email: string; role: string } | null {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch {
+    return null;
+  }
+}
+
 interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
@@ -29,12 +37,24 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       setTokens: (accessToken, refreshToken) => {
+        const payload = decodeTokenPayload(accessToken);
         if (typeof window !== 'undefined') {
           localStorage.setItem('accessToken', accessToken);
           localStorage.setItem('refreshToken', refreshToken);
           document.cookie = 'auth-logged-in=1; path=/; max-age=604800; SameSite=Lax';
+          if (payload?.role) {
+            document.cookie = `user-role=${payload.role}; path=/; max-age=604800; SameSite=Lax`;
+          }
         }
-        set({ accessToken, refreshToken, isAuthenticated: true });
+        const partialUser = payload
+          ? { id: payload.sub, email: payload.email, role: payload.role, name: '' }
+          : null;
+        set((state) => ({
+          accessToken,
+          refreshToken,
+          isAuthenticated: true,
+          user: state.user ?? partialUser,
+        }));
       },
 
       setUser: (user) => set({ user }),
@@ -44,6 +64,7 @@ export const useAuthStore = create<AuthState>()(
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           document.cookie = 'auth-logged-in=; path=/; max-age=0';
+          document.cookie = 'user-role=; path=/; max-age=0';
         }
         set({
           user: null,

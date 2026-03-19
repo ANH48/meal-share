@@ -48,7 +48,7 @@ function getPasswordStrength(password: string): {
 
 export function RegisterForm() {
   const router = useRouter();
-  const { setTokens } = useAuthStore();
+  const { setTokens, setUser } = useAuthStore();
   const [serverError, setServerError] = useState('');
   const [passwordValue, setPasswordValue] = useState('');
 
@@ -68,7 +68,10 @@ export function RegisterForm() {
         { name: values.name, email: values.email, password: values.password },
       );
       setTokens(data.accessToken, data.refreshToken);
-      router.push('/dashboard');
+      const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+      const { data: me } = await api.get('/auth/me');
+      setUser(me);
+      router.push(payload.role === 'admin' ? '/admin/dashboard' : '/dashboard');
     } catch (err) {
       const axiosErr = err as AxiosError<{ message: string | string[] }>;
       const msg = axiosErr.response?.data?.message;

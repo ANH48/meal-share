@@ -1,27 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/register'];
-const AUTH_PREFIX = '/(auth)';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Check for access token in cookies (if set) or skip for localStorage-only setup
-  // For MVP, localStorage tokens can't be read server-side, so middleware
-  // uses a server-set cookie that mirrors the auth state
   const authCookie = request.cookies.get('auth-logged-in');
+  const roleCookie = request.cookies.get('user-role');
+  const isAdmin = roleCookie?.value === 'admin';
 
   const isPublicPath = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
-  const isDashboard = pathname.startsWith('/dashboard');
+  const isAdminPath = pathname.startsWith('/admin');
+  const isProtected = pathname.startsWith('/dashboard') || isAdminPath;
 
-  // Redirect unauthenticated users away from protected routes
-  if (isDashboard && !authCookie) {
+  // Unauthenticated → login
+  if (isProtected && !authCookie) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Redirect authenticated users away from auth pages
+  // Logged in but not admin → show 403 at same URL
+  if (isAdminPath && authCookie && !isAdmin) {
+    return NextResponse.rewrite(new URL('/403', request.url));
+  }
+
+  // Already logged in → redirect away from auth pages based on role
   if (isPublicPath && authCookie) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    const dest = isAdmin ? '/admin/dashboard' : '/dashboard';
+    return NextResponse.redirect(new URL(dest, request.url));
   }
 
   return NextResponse.next();

@@ -12,10 +12,14 @@ import { GoogleAuthDto } from './dto/google-auth.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuthGuard } from '@nestjs/passport';
+import { UsersService } from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private usersService: UsersService,
+  ) {}
 
   @Post('register')
   register(@Body() dto: RegisterDto) {
@@ -53,7 +57,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  getMe(@CurrentUser() user: Record<string, unknown>) {
-    return user;
+  getMe(@CurrentUser('id') userId: string) {
+    return this.usersService.findById(userId);
   }
 }

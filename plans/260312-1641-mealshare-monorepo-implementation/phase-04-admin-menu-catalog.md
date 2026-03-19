@@ -1,6 +1,6 @@
 ---
 title: "Phase 04 - Admin Menu Catalog"
-status: pending
+status: completed
 priority: P2
 effort: 1.5h
 ---
