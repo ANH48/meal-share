@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Settings, UserPlus } from 'lucide-react';
 import { groupsApi, type Group } from '@/lib/api/groups';
 import { InviteLink } from '@/components/groups/invite-link';
@@ -9,6 +10,15 @@ import { MemberList } from '@/components/groups/member-list';
 import { useAuthStore } from '@/stores/auth-store';
 
 const TABS = ['Overview', 'Menu', 'Vote', 'Orders', 'Chat', 'Analytics'];
+
+const TAB_ROUTES: Record<string, string | null> = {
+  Overview: null,
+  Menu: 'menu',
+  Vote: 'vote',
+  Orders: 'orders',
+  Chat: null,
+  Analytics: null,
+};
 
 const AVATAR_COLORS = ['#F97316', '#7C3AED', '#0EA5E9', '#EC4899', '#10B981', '#F59E0B'];
 
@@ -23,6 +33,7 @@ function getAvatarColor(name: string) {
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
   const { user } = useAuthStore();
+  const router = useRouter();
   const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
@@ -134,19 +145,33 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       {/* Tabs */}
       <div className="bg-white border-b border-[#E2E8F0] px-8">
         <div className="flex gap-1">
-          {TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer ${
-                activeTab === tab
-                  ? 'border-[#F97316] text-[#F97316]'
-                  : 'border-transparent text-[#64748B] hover:text-[#1E293B]'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+          {TABS.map((tab) => {
+            const subRoute = TAB_ROUTES[tab];
+            if (subRoute) {
+              return (
+                <button
+                  key={tab}
+                  onClick={() => router.push(`/dashboard/groups/${groupId}/${subRoute}`)}
+                  className="px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer border-transparent text-[#64748B] hover:text-[#1E293B]"
+                >
+                  {tab}
+                </button>
+              );
+            }
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer ${
+                  activeTab === tab
+                    ? 'border-[#F97316] text-[#F97316]'
+                    : 'border-transparent text-[#64748B] hover:text-[#1E293B]'
+                }`}
+              >
+                {tab}
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -25,3 +25,20 @@ export function isToday(date: Date | string): boolean {
     d.getFullYear() === today.getFullYear()
   );
 }
+
+export function getWeekStart(date: Date = new Date()): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export function formatWeekLabel(weekStart: Date): string {
+  const end = new Date(weekStart);
+  end.setDate(end.getDate() + 6);
+  const fmt = (d: Date) =>
+    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${fmt(weekStart)} – ${fmt(end)}, ${end.getFullYear()}`;
+}

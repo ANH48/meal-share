@@ -1,6 +1,6 @@
 ---
 title: "Phase 07 - Daily Food Ordering and Expense Tracking"
-status: pending
+status: done
 priority: P1
 effort: 1.5h
 ---

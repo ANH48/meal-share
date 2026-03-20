@@ -1,6 +1,6 @@
 ---
 title: "Phase 06 - Weekly Menu Management and Food Voting System"
-status: pending
+status: done
 priority: P1
 effort: 2.5h
 ---
