@@ -5,12 +5,16 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateWeeklyMenuDto } from './dto/create-weekly-menu.dto';
 import { AddMenuItemDto } from './dto/add-menu-item.dto';
 
 @Injectable()
 export class WeeklyMenusService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async create(dto: CreateWeeklyMenuDto, userId: string) {
     await this.verifyGroupLeader(dto.groupId, userId);
@@ -107,6 +111,18 @@ export class WeeklyMenusService {
     });
   }
 
+  async lockMenu(menuId: string, userId: string) {
+    const menu = await this.findById(menuId);
+    await this.verifyGroupLeader(menu.groupId, userId);
+    return this.prisma.weeklyMenu.update({ where: { id: menuId }, data: { isLocked: true }, include: { items: { include: { menuItem: true } } } });
+  }
+
+  async unlockMenu(menuId: string, userId: string) {
+    const menu = await this.findById(menuId);
+    await this.verifyGroupLeader(menu.groupId, userId);
+    return this.prisma.weeklyMenu.update({ where: { id: menuId }, data: { isLocked: false }, include: { items: { include: { menuItem: true } } } });
+  }
+
   async confirm(menuId: string, userId: string) {
     const menu = await this.findById(menuId);
     await this.verifyGroupLeader(menu.groupId, userId);
@@ -127,6 +143,9 @@ export class WeeklyMenusService {
       where: { id: menuId },
       data: { status: 'confirmed' },
       include: { items: { include: { menuItem: true } } },
+    }).then((result) => {
+      this.notifications.notifyGroup(menu.groupId, '📋 Menu Confirmed', 'This week\'s menu is ready. Start placing orders!', 'menu_confirmed', {}, userId).catch(() => {});
+      return result;
     });
   }
 

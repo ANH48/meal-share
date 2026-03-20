@@ -1,15 +1,17 @@
 'use client';
 
 import { use, useEffect, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Lock, LockOpen } from 'lucide-react';
 import { groupsApi } from '@/lib/api/groups';
-import { weeklyMenusApi, type WeeklyMenu } from '@/lib/api/weekly-menus';
+import { weeklyMenusApi } from '@/lib/api/weekly-menus';
+import type { WeeklyMenu } from '@/lib/api/weekly-menus';
 import { ordersApi, type DailyOrder, type GroupOrderUser } from '@/lib/api/orders';
 import { useAuthStore } from '@/stores/auth-store';
 import { DailyOrderForm } from '@/components/orders/daily-order-form';
 import { OrderSummary } from '@/components/orders/order-summary';
 import { GroupOrdersTable } from '@/components/orders/group-orders-table';
 import { getWeekStart, formatWeekLabel } from '@meal-share/utils';
+import { BackButton } from '@/components/ui/back-button';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -112,9 +114,19 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
 
   const weekDays = getWeekDays(weekStart);
   const confirmedMenu = menu?.status === 'confirmed' ? menu : null;
+  const isLocked = confirmedMenu?.isLocked ?? false;
+
+  async function handleToggleLock() {
+    if (!confirmedMenu) return;
+    const { data } = isLocked
+      ? await weeklyMenusApi.unlock(confirmedMenu.id)
+      : await weeklyMenusApi.lock(confirmedMenu.id);
+    setMenu(data);
+  }
 
   return (
     <div className="p-8">
+      <BackButton href={`/dashboard/groups/${groupId}`} label="Back to Group" />
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={prevWeek}
@@ -161,11 +173,32 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar size={15} className="text-[#F97316]" />
-              <h3 className="text-sm font-semibold text-[#1E293B]">
-                Order for {formatDateLabel(selectedDay)}
-              </h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Calendar size={15} className="text-[#F97316]" />
+                <h3 className="text-sm font-semibold text-[#1E293B]">
+                  Order for {formatDateLabel(selectedDay)}
+                </h3>
+                {isLocked && (
+                  <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-500">
+                    <Lock size={10} />
+                    Locked
+                  </span>
+                )}
+              </div>
+              {isLeader && confirmedMenu && (
+                <button
+                  onClick={handleToggleLock}
+                  className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${
+                    isLocked
+                      ? 'border-green-200 text-green-600 hover:bg-green-50'
+                      : 'border-red-200 text-red-500 hover:bg-red-50'
+                  }`}
+                >
+                  {isLocked ? <LockOpen size={12} /> : <Lock size={12} />}
+                  {isLocked ? 'Unlock Orders' : 'Lock Orders'}
+                </button>
+              )}
             </div>
             {loading ? (
               <div className="animate-pulse space-y-3">
@@ -186,6 +219,7 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
                 date={dayStr}
                 existingOrders={myOrders.filter((o) => o.date.split('T')[0] === dayStr)}
                 onOrdersChange={handleOrdersChange}
+                isLocked={isLocked}
               />
             )}
           </div>

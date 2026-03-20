@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { WeeklyMenuView } from '@/components/menu/weekly-menu-view';
 import { WeeklyMenuBuilder } from '@/components/menu/weekly-menu-builder';
 import { getWeekStart, formatWeekLabel } from '@meal-share/utils';
+import { BackButton } from '@/components/ui/back-button';
 
 export default function GroupMenuPage({
   params,
@@ -62,6 +63,7 @@ export default function GroupMenuPage({
 
   return (
     <div className="p-8 max-w-2xl">
+      <BackButton href={`/dashboard/groups/${groupId}`} label="Back to Group" />
       {/* Week selector */}
       <div className="flex items-center gap-3 mb-6">
         <button

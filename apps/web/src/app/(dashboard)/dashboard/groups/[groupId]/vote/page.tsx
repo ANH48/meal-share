@@ -8,6 +8,40 @@ import { useAuthStore } from '@/stores/auth-store';
 import { VoteCard } from '@/components/vote/vote-card';
 import { VoteResults } from '@/components/vote/vote-results';
 import { CreateVoteForm } from '@/components/vote/create-vote-form';
+import { BackButton } from '@/components/ui/back-button';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
+
+function ClosedVoteDeleteButton({ voteId, onDeleted }: { voteId: string; onDeleted: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  async function handle() {
+    setShowConfirm(false);
+    setLoading(true);
+    try { await votesApi.remove(voteId); onDeleted(); } catch { /* ignore */ } finally { setLoading(false); }
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setShowConfirm(true)}
+        disabled={loading}
+        className="text-xs font-medium px-2.5 py-1 rounded-lg border border-[#E2E8F0] text-[#64748B] hover:border-red-500 hover:text-red-500 transition-colors disabled:opacity-50 cursor-pointer"
+      >
+        Delete
+      </button>
+      {showConfirm && (
+        <ConfirmModal
+          title="Delete Vote"
+          message="This will permanently delete the vote and all responses. This cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={handle}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+    </>
+  );
+}
 
 export default function GroupVotePage({
   params,
@@ -62,6 +96,7 @@ export default function GroupVotePage({
 
   return (
     <div className="p-8 max-w-2xl">
+      <BackButton href={`/dashboard/groups/${groupId}`} label="Back to Group" />
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-[#1E293B]">Votes</h2>
         {isLeader && (
@@ -85,7 +120,7 @@ export default function GroupVotePage({
           {openVotes.length > 0 && (
             <div className="space-y-4 mb-6">
               {openVotes.map((vote) => (
-                <VoteCard key={vote.id} vote={vote} onVoted={fetchVotes} />
+                <VoteCard key={vote.id} vote={vote} isLeader={isLeader} onVoted={fetchVotes} onDeleted={fetchVotes} />
               ))}
             </div>
           )}
@@ -100,9 +135,12 @@ export default function GroupVotePage({
                   key={vote.id}
                   className="bg-white rounded-xl border border-[#E2E8F0] p-5"
                 >
-                  <h4 className="text-sm font-semibold text-[#1E293B] mb-3">
-                    {vote.title}
-                  </h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-[#1E293B]">{vote.title}</h4>
+                    {isLeader && (
+                      <ClosedVoteDeleteButton voteId={vote.id} onDeleted={fetchVotes} />
+                    )}
+                  </div>
                   <VoteResults results={resultsMap[vote.id] ?? []} />
                 </div>
               ))}

@@ -3,10 +3,13 @@
 import { useState } from 'react';
 import { Timer, Check } from 'lucide-react';
 import { votesApi, type Vote } from '@/lib/api/votes';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 
 interface VoteCardProps {
   vote: Vote;
+  isLeader?: boolean;
   onVoted: () => void;
+  onDeleted?: () => void;
 }
 
 function getTimeLeft(endsAt: string): string {
@@ -21,23 +24,37 @@ function getTimeLeft(endsAt: string): string {
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
-export function VoteCard({ vote, onVoted }: VoteCardProps) {
+export function VoteCard({ vote, isLeader, onVoted, onDeleted }: VoteCardProps) {
+  const hasVoted = !!vote.userResponse;
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(
     vote.userResponse?.voteOptionId ?? null
   );
-  const [hasVoted, setHasVoted] = useState(!!vote.userResponse);
   const [submitting, setSubmitting] = useState(false);
+  const [actioning, setActioning] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const options = vote.options ?? [];
   const totalVotes = options.reduce((sum, o) => sum + (o._count?.responses ?? 0), 0);
   const isOpen = vote.status === 'open' && new Date(vote.endsAt) > new Date();
+
+  async function handleClose() {
+    setShowCloseConfirm(false);
+    setActioning(true);
+    try { await votesApi.close(vote.id); onVoted(); } catch { /* ignore */ } finally { setActioning(false); }
+  }
+
+  async function handleDelete() {
+    setShowDeleteConfirm(false);
+    setActioning(true);
+    try { await votesApi.remove(vote.id); onDeleted?.(); } catch { /* ignore */ } finally { setActioning(false); }
+  }
 
   async function handleCastVote() {
     if (!selectedOptionId || submitting) return;
     setSubmitting(true);
     try {
       await votesApi.respond(vote.id, selectedOptionId);
-      setHasVoted(true);
       onVoted();
     } catch {
       // ignore
@@ -50,17 +67,37 @@ export function VoteCard({ vote, onVoted }: VoteCardProps) {
     <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5">
       <div className="flex items-start justify-between gap-3 mb-3">
         <h4 className="text-sm font-semibold text-[#1E293B]">{vote.title}</h4>
-        {isOpen && (
-          <span className="shrink-0 flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-[#FFF3CD] text-[#92600A]">
-            <Timer size={12} />
-            Closes in {getTimeLeft(vote.endsAt)}
-          </span>
-        )}
-        {!isOpen && (
-          <span className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full bg-[#F1F5F9] text-[#64748B]">
-            Closed
-          </span>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {isOpen && (
+            <span className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-[#FFF3CD] text-[#92600A]">
+              <Timer size={12} />
+              Closes in {getTimeLeft(vote.endsAt)}
+            </span>
+          )}
+          {!isOpen && (
+            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-[#F1F5F9] text-[#64748B]">
+              Closed
+            </span>
+          )}
+          {isLeader && isOpen && (
+            <button
+              onClick={() => setShowCloseConfirm(true)}
+              disabled={actioning}
+              className="text-xs font-medium px-2.5 py-1 rounded-lg border border-[#E2E8F0] text-[#64748B] hover:border-[#F97316] hover:text-[#F97316] transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              Close vote
+            </button>
+          )}
+          {isLeader && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={actioning}
+              className="text-xs font-medium px-2.5 py-1 rounded-lg border border-[#E2E8F0] text-[#64748B] hover:border-red-500 hover:text-red-500 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              Delete
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2 mb-4">
@@ -129,6 +166,27 @@ export function VoteCard({ vote, onVoted }: VoteCardProps) {
           {submitting ? 'Submitting...' : 'Cast My Vote'}
         </button>
       ) : null}
+
+      {showCloseConfirm && (
+        <ConfirmModal
+          title="Close Vote"
+          message="Are you sure you want to close this vote? Members will no longer be able to vote."
+          confirmLabel="Close vote"
+          confirmClassName="bg-[#F97316] hover:bg-[#EA6A00] text-white"
+          onConfirm={handleClose}
+          onCancel={() => setShowCloseConfirm(false)}
+        />
+      )}
+
+      {showDeleteConfirm && (
+        <ConfirmModal
+          title="Delete Vote"
+          message="This will permanently delete the vote and all responses. This cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </div>
   );
 }

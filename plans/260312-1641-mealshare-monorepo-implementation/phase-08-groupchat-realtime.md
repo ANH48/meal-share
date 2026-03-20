@@ -1,6 +1,6 @@
 ---
 title: "Phase 08 - GroupChat with Real-time"
-status: pending
+status: complete
 priority: P2
 effort: 2h
 ---

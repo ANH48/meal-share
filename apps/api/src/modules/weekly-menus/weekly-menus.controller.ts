@@ -76,4 +76,14 @@ export class WeeklyMenusController {
   ) {
     return this.weeklyMenusService.confirm(menuId, userId);
   }
+
+  @Patch(':id/lock')
+  lockMenu(@Param('id') menuId: string, @CurrentUser('id') userId: string) {
+    return this.weeklyMenusService.lockMenu(menuId, userId);
+  }
+
+  @Patch(':id/unlock')
+  unlockMenu(@Param('id') menuId: string, @CurrentUser('id') userId: string) {
+    return this.weeklyMenusService.unlockMenu(menuId, userId);
+  }
 }

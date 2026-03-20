@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Settings, UserPlus } from 'lucide-react';
+import { Settings, UserPlus, ArrowLeft } from 'lucide-react';
 import { groupsApi, type Group } from '@/lib/api/groups';
 import { InviteLink } from '@/components/groups/invite-link';
 import { MemberList } from '@/components/groups/member-list';
@@ -16,8 +16,8 @@ const TAB_ROUTES: Record<string, string | null> = {
   Menu: 'menu',
   Vote: 'vote',
   Orders: 'orders',
-  Chat: null,
-  Analytics: null,
+  Chat: 'chat',
+  Analytics: 'analytics',
 };
 
 const AVATAR_COLORS = ['#F97316', '#7C3AED', '#0EA5E9', '#EC4899', '#10B981', '#F59E0B'];
@@ -81,6 +81,17 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
   return (
     <div>
+      {/* Back button */}
+      <div className="bg-white border-b border-[#E2E8F0] px-8 py-3">
+        <button
+          onClick={() => router.push('/dashboard/groups')}
+          className="flex items-center gap-1.5 text-sm text-[#64748B] hover:text-[#1E293B] transition-colors cursor-pointer"
+        >
+          <ArrowLeft size={15} />
+          <span>My Groups</span>
+        </button>
+      </div>
+
       {/* Group header card */}
       <div className="bg-white border-b border-[#E2E8F0] px-8 py-5">
         <div className="flex items-center justify-between">

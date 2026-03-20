@@ -46,4 +46,10 @@ export const votesApi = {
 
   getResults: (voteId: string) =>
     api.get<VoteResult[]>(`/votes/${voteId}/results`),
+
+  close: (voteId: string) =>
+    api.patch(`/votes/${voteId}/close`, {}),
+
+  remove: (voteId: string) =>
+    api.delete(`/votes/${voteId}`),
 };

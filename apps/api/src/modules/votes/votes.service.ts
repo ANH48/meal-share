@@ -7,12 +7,16 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { SubmitVoteDto } from './dto/submit-vote.dto';
 
 @Injectable()
 export class VotesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async create(dto: CreateVoteDto, userId: string) {
     await this.verifyGroupLeader(dto.groupId, userId);
@@ -43,11 +47,14 @@ export class VotesService {
           _count: { select: { responses: true } },
         },
       });
+    }).then((result) => {
+      this.notifications.notifyGroup(dto.groupId, '🗳️ New Vote', dto.title, 'vote_created', {}, userId).catch(() => {});
+      return result;
     });
   }
 
-  async findByGroup(groupId: string) {
-    return this.prisma.vote.findMany({
+  async findByGroup(groupId: string, userId: string) {
+    const votes = await this.prisma.vote.findMany({
       where: { groupId },
       include: {
         options: {
@@ -60,6 +67,16 @@ export class VotesService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    const userResponses = await this.prisma.voteResponse.findMany({
+      where: { userId, voteId: { in: votes.map((v) => v.id) } },
+    });
+
+    const responseMap = new Map(userResponses.map((r) => [r.voteId, r]));
+    return votes.map((v) => ({
+      ...v,
+      userResponse: responseMap.get(v.id) ?? null,
+    }));
   }
 
   async findById(voteId: string, userId?: string) {
@@ -146,6 +163,24 @@ export class VotesService {
         count,
         percentage,
       };
+    });
+  }
+
+  async closeVote(voteId: string, userId: string) {
+    const vote = await this.prisma.vote.findUnique({ where: { id: voteId } });
+    if (!vote) throw new NotFoundException('Vote not found');
+    await this.verifyGroupLeader(vote.groupId, userId);
+    return this.prisma.vote.update({ where: { id: voteId }, data: { status: 'closed' } });
+  }
+
+  async deleteVote(voteId: string, userId: string) {
+    const vote = await this.prisma.vote.findUnique({ where: { id: voteId } });
+    if (!vote) throw new NotFoundException('Vote not found');
+    await this.verifyGroupLeader(vote.groupId, userId);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.voteResponse.deleteMany({ where: { voteId } });
+      await tx.voteOption.deleteMany({ where: { voteId } });
+      await tx.vote.delete({ where: { id: voteId } });
     });
   }
 

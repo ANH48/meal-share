@@ -24,12 +24,13 @@ import { UpdateMenuItemDto } from './dto/update-menu-item.dto';
 import { QueryMenuItemDto } from './dto/query-menu-item.dto';
 
 @Controller('menu-items')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@UseGuards(JwtAuthGuard)
 export class MenuItemsController {
   constructor(private menuItemsService: MenuItemsService) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @UseInterceptors(
     FileInterceptor('image', { limits: { fileSize: 5 * 1024 * 1024 } }),
   )
@@ -52,6 +53,8 @@ export class MenuItemsController {
   }
 
   @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @UseInterceptors(
     FileInterceptor('image', { limits: { fileSize: 5 * 1024 * 1024 } }),
   )
@@ -64,6 +67,8 @@ export class MenuItemsController {
   }
 
   @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string) {
     return this.menuItemsService.remove(id);

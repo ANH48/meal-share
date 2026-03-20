@@ -42,7 +42,7 @@ export class MenuItemsService {
     const limit = query.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { groupId: null };
     if (query.search) {
       where.name = { contains: query.search, mode: 'insensitive' };
     }

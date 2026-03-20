@@ -10,17 +10,11 @@ export function middleware(request: NextRequest) {
   const isAdmin = roleCookie?.value === 'admin';
 
   const isPublicPath = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
-  const isAdminPath = pathname.startsWith('/admin');
-  const isProtected = pathname.startsWith('/dashboard') || isAdminPath;
+  const isProtected = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
 
   // Unauthenticated → login
   if (isProtected && !authCookie) {
     return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  // Logged in but not admin → show 403 at same URL
-  if (isAdminPath && authCookie && !isAdmin) {
-    return NextResponse.rewrite(new URL('/403', request.url));
   }
 
   // Already logged in → redirect away from auth pages based on role

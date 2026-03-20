@@ -17,6 +17,7 @@ import {
 import { useAuthStore } from '@/stores/auth-store';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 
 const ADMIN_NAV = [
   { label: 'Menu Catalog', href: '/admin/menu-items', icon: Package },
@@ -80,7 +81,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#F97316' }}>
             <UtensilsCrossed size={18} className="text-white" />
           </div>
-          <span className="font-bold text-[#1E293B] text-[15px] font-mono">MealShare</span>
+          <span className="font-bold text-[#1E293B] text-[15px] font-mono flex-1">MealShare</span>
+          <NotificationBell />
         </div>
 
         {/* Nav */}
@@ -115,13 +117,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <p className="text-sm font-medium text-[#1E293B] truncate">{user?.name || user?.email || 'User'}</p>
               <p className="text-xs text-[#94A3B8] truncate">{user?.email ?? ''}</p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="text-[#94A3B8] hover:text-[#64748B] transition-colors"
-              aria-label="Log out"
-            >
-              <LogOut size={15} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleLogout}
+                className="text-[#94A3B8] hover:text-[#64748B] transition-colors w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#F8FAFC]"
+                aria-label="Log out"
+              >
+                <LogOut size={15} />
+              </button>
+            </div>
           </div>
         </div>
       </aside>

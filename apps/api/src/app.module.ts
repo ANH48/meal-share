@@ -12,6 +12,10 @@ import { GroupsModule } from './modules/groups/groups.module';
 import { WeeklyMenusModule } from './modules/weekly-menus/weekly-menus.module';
 import { VotesModule } from './modules/votes/votes.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { MessagesModule } from './modules/messages/messages.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { FirebaseModule } from './firebase/firebase.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -26,6 +30,10 @@ import { OrdersModule } from './modules/orders/orders.module';
     WeeklyMenusModule,
     VotesModule,
     OrdersModule,
+    MessagesModule,
+    AnalyticsModule,
+    FirebaseModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

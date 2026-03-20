@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -27,8 +29,11 @@ export class VotesController {
   }
 
   @Get()
-  findByGroup(@Query('groupId') groupId: string) {
-    return this.votesService.findByGroup(groupId);
+  findByGroup(
+    @Query('groupId') groupId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.votesService.findByGroup(groupId, userId);
   }
 
   @Get(':id')
@@ -51,5 +56,21 @@ export class VotesController {
   @Get(':id/results')
   getResults(@Param('id') voteId: string) {
     return this.votesService.getResults(voteId);
+  }
+
+  @Patch(':id/close')
+  closeVote(
+    @Param('id') voteId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.votesService.closeVote(voteId, userId);
+  }
+
+  @Delete(':id')
+  deleteVote(
+    @Param('id') voteId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.votesService.deleteVote(voteId, userId);
   }
 }

@@ -27,9 +27,13 @@ export class OrdersService {
     if (weeklyMenuItem.weeklyMenu.status !== 'confirmed') {
       throw new BadRequestException('Can only order from a confirmed weekly menu');
     }
+    if (weeklyMenuItem.weeklyMenu.isLocked) {
+      throw new BadRequestException('Orders are locked for this week');
+    }
 
     const date = new Date(dto.date);
-    const totalPrice = Number(weeklyMenuItem.price) * dto.quantity;
+    const unitPrice = Number(weeklyMenuItem.price);
+    const totalPrice = unitPrice * dto.quantity;
 
     return this.prisma.dailyOrder.upsert({
       where: {
@@ -46,6 +50,7 @@ export class OrdersService {
         date,
         weeklyMenuItemId: dto.weeklyMenuItemId,
         quantity: dto.quantity,
+        unitPrice,
         totalPrice,
       },
       update: {
@@ -61,17 +66,22 @@ export class OrdersService {
   async update(orderId: string, dto: UpdateOrderDto, userId: string) {
     const order = await this.prisma.dailyOrder.findUnique({
       where: { id: orderId },
-      include: { weeklyMenuItem: true },
+      include: { weeklyMenuItem: { include: { weeklyMenu: true } } },
     });
     if (!order) throw new NotFoundException('Order not found');
     if (order.userId !== userId) throw new ForbiddenException('Not your order');
+    if (order.weeklyMenuItem.weeklyMenu.isLocked) {
+      throw new BadRequestException('Orders are locked for this week');
+    }
 
     if (dto.quantity === 0) {
       await this.prisma.dailyOrder.delete({ where: { id: orderId } });
       return { deleted: true };
     }
 
-    const totalPrice = Number(order.weeklyMenuItem.price) * dto.quantity;
+    // Use stored unitPrice so price changes on the menu don't affect existing orders
+    const unitPrice = Number(order.unitPrice) || Number(order.weeklyMenuItem.price);
+    const totalPrice = unitPrice * dto.quantity;
     return this.prisma.dailyOrder.update({
       where: { id: orderId },
       data: { quantity: dto.quantity, totalPrice },
@@ -80,9 +90,15 @@ export class OrdersService {
   }
 
   async remove(orderId: string, userId: string) {
-    const order = await this.prisma.dailyOrder.findUnique({ where: { id: orderId } });
+    const order = await this.prisma.dailyOrder.findUnique({
+      where: { id: orderId },
+      include: { weeklyMenuItem: { include: { weeklyMenu: true } } },
+    });
     if (!order) throw new NotFoundException('Order not found');
     if (order.userId !== userId) throw new ForbiddenException('Not your order');
+    if (order.weeklyMenuItem.weeklyMenu.isLocked) {
+      throw new BadRequestException('Orders are locked for this week');
+    }
     return this.prisma.dailyOrder.delete({ where: { id: orderId } });
   }
 

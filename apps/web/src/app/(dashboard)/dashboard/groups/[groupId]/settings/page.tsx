@@ -10,6 +10,8 @@ import { RefreshCw } from 'lucide-react';
 import { groupsApi, type Group } from '@/lib/api/groups';
 import { MemberList } from '@/components/groups/member-list';
 import { InviteLink } from '@/components/groups/invite-link';
+import { GroupDishesManager } from '@/components/groups/group-dishes-manager';
+import { BackButton } from '@/components/ui/back-button';
 import { useAuthStore } from '@/stores/auth-store';
 
 const schema = z.object({
@@ -98,6 +100,7 @@ export default function GroupSettingsPage({ params }: { params: Promise<{ groupI
   return (
     <div className="p-8">
       <div className="max-w-[640px] mx-auto space-y-6">
+        <BackButton href={`/dashboard/groups/${groupId}`} label="Back to Group" />
         <h1 className="text-2xl font-bold text-[#1E293B] font-mono">Group Settings</h1>
 
         {/* Edit form */}
@@ -153,6 +156,13 @@ export default function GroupSettingsPage({ params }: { params: Promise<{ groupI
             </button>
           </div>
           <InviteLink inviteCode={group.inviteCode} />
+        </div>
+
+        {/* Group Dishes */}
+        <div className="bg-white rounded-xl border border-[#E2E8F0] p-6">
+          <h2 className="text-sm font-semibold text-[#1E293B] mb-1">Group Dishes</h2>
+          <p className="text-xs text-[#94A3B8] mb-4">Manage dishes specific to this group. Members can order these in the weekly menu.</p>
+          <GroupDishesManager groupId={groupId} />
         </div>
 
         {/* Members */}

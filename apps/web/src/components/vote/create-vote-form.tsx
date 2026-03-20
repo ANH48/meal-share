@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { votesApi } from '@/lib/api/votes';
 import { menuItemsApi, type MenuItem } from '@/lib/api/menu-items';
+import { groupDishesApi, type GroupDish } from '@/lib/api/group-dishes';
+
+type DishOption = { id: string; name: string; category?: string | null };
 
 interface CreateVoteFormProps {
   groupId: string;
@@ -16,13 +19,30 @@ export function CreateVoteForm({ groupId, onCreated, onClose }: CreateVoteFormPr
   const [weekStartDate, setWeekStartDate] = useState('');
   const [endsAt, setEndsAt] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [allDishes, setAllDishes] = useState<MenuItem[]>([]);
+  const [allDishes, setAllDishes] = useState<DishOption[]>([]);
+  const [loadingDishes, setLoadingDishes] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const submittingRef = useRef(false);
 
   useEffect(() => {
-    menuItemsApi.list({ limit: 100 }).then(({ data }) => setAllDishes(data.items));
-  }, []);
+    let cancelled = false;
+    Promise.all([
+      menuItemsApi.list({ limit: 100 }).catch(() => ({ data: { items: [] as MenuItem[] } })),
+      groupDishesApi.list(groupId).catch(() => ({ data: [] as GroupDish[] })),
+    ]).then(([{ data: global }, { data: group }]) => {
+      if (cancelled) return;
+      const merged: DishOption[] = [
+        ...group.map((d) => ({ id: d.id, name: d.name, category: d.category })),
+        ...global.items.map((d: MenuItem) => ({ id: d.id, name: d.name, category: d.category })),
+      ];
+      // deduplicate by id
+      const seen = new Set<string>();
+      setAllDishes(merged.filter((d) => (seen.has(d.id) ? false : seen.add(d.id) && true)));
+      setLoadingDishes(false);
+    });
+    return () => { cancelled = true; };
+  }, [groupId]);
 
   function toggleDish(id: string) {
     setSelectedIds((prev) =>
@@ -32,11 +52,17 @@ export function CreateVoteForm({ groupId, onCreated, onClose }: CreateVoteFormPr
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submittingRef.current) return;
     setError('');
+    if (!endsAt || new Date(endsAt) <= new Date()) {
+      setError('Closes At must be a future date/time.');
+      return;
+    }
     if (selectedIds.length < 2) {
       setError('Please select at least 2 dishes.');
       return;
     }
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       await votesApi.create({
@@ -50,6 +76,7 @@ export function CreateVoteForm({ groupId, onCreated, onClose }: CreateVoteFormPr
       onClose();
     } catch {
       setError('Failed to create vote. Please try again.');
+      submittingRef.current = false;
     } finally {
       setSubmitting(false);
     }
@@ -108,7 +135,11 @@ export function CreateVoteForm({ groupId, onCreated, onClose }: CreateVoteFormPr
               Dishes to vote on <span className="text-[#94A3B8]">(select at least 2)</span>
             </label>
             <div className="space-y-1 max-h-48 overflow-y-auto border border-[#E2E8F0] rounded-lg p-2">
-              {allDishes.map((dish) => {
+              {loadingDishes ? (
+                <p className="text-xs text-[#94A3B8] text-center py-2">Loading dishes...</p>
+              ) : allDishes.length === 0 ? (
+                <p className="text-xs text-[#94A3B8] text-center py-2">No dishes available. Add dishes in Group Settings first.</p>
+              ) : allDishes.map((dish) => {
                 const checked = selectedIds.includes(dish.id);
                 return (
                   <label
@@ -128,9 +159,6 @@ export function CreateVoteForm({ groupId, onCreated, onClose }: CreateVoteFormPr
                   </label>
                 );
               })}
-              {allDishes.length === 0 && (
-                <p className="text-xs text-[#94A3B8] text-center py-2">Loading dishes...</p>
-              )}
             </div>
           </div>
 

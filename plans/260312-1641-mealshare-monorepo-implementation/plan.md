@@ -37,8 +37,8 @@ Meal-sharing money management web app. Groups order food weekly, track expenses,
 | 05 | Group Management | 2h | pending | [phase-05](./phase-05-group-management.md) |
 | 06 | Weekly Menu & Food Voting System | 2.5h | pending | [phase-06](./phase-06-weekly-menu-management-and-food-voting-system.md) |
 | 07 | Daily Food Ordering & Expense Tracking | 1.5h | pending | [phase-07](./phase-07-daily-food-ordering-and-expense-tracking.md) |
-| 08 | GroupChat Real-time | 2h | pending | [phase-08](./phase-08-groupchat-realtime.md) |
-| 09 | Analytics Dashboard & Daily Summary Cron | 2.5h | pending | [phase-09](./phase-09-analytics-dashboard-and-daily-summary-cron.md) |
+| 08 | GroupChat Real-time | 2h | complete | [phase-08](./phase-08-groupchat-realtime.md) |
+| 09 | Analytics Dashboard & Daily Summary Cron | 2.5h | complete | [phase-09](./phase-09-analytics-dashboard-and-daily-summary-cron.md) |
 | 10 | Firebase Notifications | 1.5h | pending | [phase-10](./phase-10-firebase-notifications.md) |
 | 11 | Testing & Deployment | 3h | pending | [phase-11](./phase-11-testing-deployment.md) |
 

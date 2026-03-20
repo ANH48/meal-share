@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Minus, Plus, Trash2, ShoppingCart } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Minus, Plus, ShoppingCart, Save } from 'lucide-react';
 import type { WeeklyMenu } from '@/lib/api/weekly-menus';
 import { ordersApi, type DailyOrder } from '@/lib/api/orders';
 
@@ -11,63 +11,77 @@ interface Props {
   date: string;
   existingOrders: DailyOrder[];
   onOrdersChange: (orders: DailyOrder[]) => void;
+  isLocked?: boolean;
 }
 
 function formatVND(amount: number) {
   return new Intl.NumberFormat('vi-VN').format(amount) + '₫';
 }
 
-export function DailyOrderForm({ menu, groupId, date, existingOrders, onOrdersChange }: Props) {
-  const [saving, setSaving] = useState<string | null>(null);
+export function DailyOrderForm({ menu, groupId, date, existingOrders, onOrdersChange, isLocked = false }: Props) {
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const getOrder = (weeklyMenuItemId: string) =>
-    existingOrders.find((o) => o.weeklyMenuItemId === weeklyMenuItemId);
+  // Sync local quantities when existingOrders or date changes
+  useEffect(() => {
+    const map: Record<string, number> = {};
+    existingOrders.forEach((o) => { map[o.weeklyMenuItemId] = o.quantity; });
+    setQuantities(map);
+    setSaved(false);
+  }, [existingOrders, date]);
 
-  async function handleQuantityChange(weeklyMenuItemId: string, delta: number) {
-    const existing = getOrder(weeklyMenuItemId);
-    const currentQty = existing?.quantity ?? 0;
-    const newQty = Math.max(0, Math.min(10, currentQty + delta));
+  const items = menu.items ?? [];
 
-    setSaving(weeklyMenuItemId);
+  function setQty(weeklyMenuItemId: string, qty: number) {
+    setSaved(false);
+    setQuantities((prev) => ({ ...prev, [weeklyMenuItemId]: Math.max(0, Math.min(10, qty)) }));
+  }
+
+  const localTotal = items.reduce((sum, item) => {
+    const qty = quantities[item.id] ?? 0;
+    return sum + qty * Number(item.price);
+  }, 0);
+
+  const localItemCount = items.filter((i) => (quantities[i.id] ?? 0) > 0).length;
+
+  const isDirty = items.some((item) => {
+    const existing = existingOrders.find((o) => o.weeklyMenuItemId === item.id);
+    return (quantities[item.id] ?? 0) !== (existing?.quantity ?? 0);
+  });
+
+  async function handleSave() {
+    setSaving(true);
     try {
-      if (newQty === 0 && existing) {
-        await ordersApi.remove(existing.id);
-        onOrdersChange(existingOrders.filter((o) => o.id !== existing.id));
-      } else if (newQty > 0) {
-        const { data } = await ordersApi.create({ groupId, date, weeklyMenuItemId, quantity: newQty });
-        onOrdersChange([
-          ...existingOrders.filter((o) => o.weeklyMenuItemId !== weeklyMenuItemId),
-          data,
-        ]);
+      let updatedOrders = [...existingOrders];
+      for (const item of items) {
+        const newQty = quantities[item.id] ?? 0;
+        const existing = existingOrders.find((o) => o.weeklyMenuItemId === item.id);
+        if (existing && newQty === 0) {
+          await ordersApi.remove(existing.id);
+          updatedOrders = updatedOrders.filter((o) => o.id !== existing.id);
+        } else if (existing && newQty !== existing.quantity) {
+          const { data } = await ordersApi.update(existing.id, newQty);
+          updatedOrders = updatedOrders.map((o) => o.id === existing.id ? data : o);
+        } else if (!existing && newQty > 0) {
+          const { data } = await ordersApi.create({ groupId, date, weeklyMenuItemId: item.id, quantity: newQty });
+          updatedOrders.push(data);
+        }
       }
+      onOrdersChange(updatedOrders);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch {
-      // silently ignore
+      // ignore
     } finally {
-      setSaving(null);
+      setSaving(false);
     }
   }
-
-  async function handleRemove(orderId: string, weeklyMenuItemId: string) {
-    setSaving(weeklyMenuItemId);
-    try {
-      await ordersApi.remove(orderId);
-      onOrdersChange(existingOrders.filter((o) => o.id !== orderId));
-    } catch {
-      //
-    } finally {
-      setSaving(null);
-    }
-  }
-
-  const dayTotal = existingOrders.reduce((sum, o) => sum + Number(o.totalPrice), 0);
 
   return (
     <div className="space-y-3">
-      {(menu.items ?? []).map((item) => {
-        const order = getOrder(item.id);
-        const qty = order?.quantity ?? 0;
-        const isSaving = saving === item.id;
-
+      {items.map((item) => {
+        const qty = quantities[item.id] ?? 0;
         return (
           <div
             key={item.id}
@@ -83,26 +97,17 @@ export function DailyOrderForm({ menu, groupId, date, existingOrders, onOrdersCh
               {formatVND(Number(item.price))}
             </span>
             <div className="flex items-center gap-1 shrink-0">
-              {qty > 0 && (
-                <button
-                  onClick={() => order && handleRemove(order.id, item.id)}
-                  disabled={isSaving}
-                  className="w-7 h-7 flex items-center justify-center text-[#94A3B8] hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <Trash2 size={13} />
-                </button>
-              )}
               <button
-                onClick={() => handleQuantityChange(item.id, -1)}
-                disabled={isSaving || qty === 0}
+                onClick={() => setQty(item.id, qty - 1)}
+                disabled={qty === 0 || isLocked}
                 className="w-7 h-7 flex items-center justify-center border border-[#E2E8F0] rounded-md hover:bg-[#F8FAFC] transition-colors cursor-pointer disabled:opacity-40"
               >
                 <Minus size={12} />
               </button>
               <span className="w-6 text-center text-sm font-semibold text-[#1E293B]">{qty}</span>
               <button
-                onClick={() => handleQuantityChange(item.id, 1)}
-                disabled={isSaving || qty >= 10}
+                onClick={() => setQty(item.id, qty + 1)}
+                disabled={qty >= 10 || isLocked}
                 className="w-7 h-7 flex items-center justify-center border border-[#E2E8F0] rounded-md hover:bg-[#F8FAFC] transition-colors cursor-pointer disabled:opacity-40"
               >
                 <Plus size={12} />
@@ -112,17 +117,29 @@ export function DailyOrderForm({ menu, groupId, date, existingOrders, onOrdersCh
         );
       })}
 
-      {existingOrders.length > 0 && (
-        <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0]">
-          <div className="flex items-center gap-2 text-sm text-[#64748B]">
-            <ShoppingCart size={14} />
-            <span>{existingOrders.length} item{existingOrders.length !== 1 ? 's' : ''}</span>
-          </div>
-          <span className="text-sm font-bold text-[#1E293B]">
-            Total: <span className="text-[#F97316]">{formatVND(dayTotal)}</span>
-          </span>
+      <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0]">
+        <div className="flex items-center gap-2 text-sm text-[#64748B]">
+          <ShoppingCart size={14} />
+          <span>{localItemCount} item{localItemCount !== 1 ? 's' : ''}</span>
+          {localItemCount > 0 && (
+            <span className="font-bold text-[#1E293B]">
+              · Total: <span className="text-[#F97316]">{formatVND(localTotal)}</span>
+            </span>
+          )}
         </div>
-      )}
+        {isLocked ? (
+          <span className="text-xs text-red-400 font-medium">Orders locked</span>
+        ) : (
+          <button
+            onClick={handleSave}
+            disabled={saving || !isDirty}
+            className="flex items-center gap-1.5 h-9 px-4 bg-[#F97316] text-white text-sm font-medium rounded-lg hover:bg-[#EA6A00] transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-default"
+          >
+            <Save size={14} />
+            {saved ? 'Saved!' : saving ? 'Saving...' : 'Save'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

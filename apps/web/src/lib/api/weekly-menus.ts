@@ -22,6 +22,7 @@ export interface WeeklyMenu {
   groupId: string;
   weekStartDate: string;
   status: 'draft' | 'confirmed';
+  isLocked: boolean;
   createdBy: string;
   createdAt: string;
   items?: WeeklyMenuItem[];
@@ -48,4 +49,10 @@ export const weeklyMenusApi = {
 
   confirm: (menuId: string) =>
     api.patch<WeeklyMenu>(`/weekly-menus/${menuId}/confirm`),
+
+  lock: (menuId: string) =>
+    api.patch<WeeklyMenu>(`/weekly-menus/${menuId}/lock`),
+
+  unlock: (menuId: string) =>
+    api.patch<WeeklyMenu>(`/weekly-menus/${menuId}/unlock`),
 };
