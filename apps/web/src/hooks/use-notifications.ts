@@ -11,9 +11,10 @@ import { useAuthStore } from '@/stores/auth-store';
 export function useNotifications() {
   const { isAuthenticated, user } = useAuthStore();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  const unreadCount = notifications.filter((n) => !n.readAt).length;
 
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -21,7 +22,6 @@ export function useNotifications() {
       const { data } = await notificationsApi.list();
       setNotifications(data.notifications);
       setNextCursor(data.nextCursor);
-      setUnreadCount(data.notifications.filter((n) => !n.readAt).length);
     } catch {
       // ignore
     }
@@ -78,7 +78,6 @@ export function useNotifications() {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)),
     );
-    setUnreadCount((c) => Math.max(0, c - 1));
   }
 
   async function markAllAsRead() {
@@ -86,7 +85,6 @@ export function useNotifications() {
     setNotifications((prev) =>
       prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })),
     );
-    setUnreadCount(0);
   }
 
   // Firebase RTDB listener for real-time notifications
@@ -106,7 +104,6 @@ export function useNotifications() {
         if (prev.find((n) => n.id === data.id)) return prev;
         return [data, ...prev];
       });
-      setUnreadCount((c) => c + 1);
     });
 
     return () => off(notifRef, 'child_added', handler);

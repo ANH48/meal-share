@@ -37,5 +37,9 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 
+# Firebase service account keys
+*firebase-adminsdk*.json
+apps/api/firebase-service-account.json
+
 #claude
 .claude
