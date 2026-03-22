@@ -36,6 +36,32 @@ export class WeeklyMenusController {
     return this.weeklyMenusService.findByGroupAndWeek(groupId, weekStart);
   }
 
+  @Get('by-date')
+  findByGroupAndDate(
+    @Query('groupId') groupId: string,
+    @Query('date') date: string,
+  ) {
+    return this.weeklyMenusService.findByGroupAndDate(groupId, date);
+  }
+
+  @Get('day-lock')
+  getDayLock(
+    @Query('groupId') groupId: string,
+    @Query('date') date: string,
+  ) {
+    return this.weeklyMenusService.getDayLock(groupId, date);
+  }
+
+  @Patch('day-lock')
+  setDayLock(
+    @Body('groupId') groupId: string,
+    @Body('date') date: string,
+    @Body('lock') lock: boolean,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.weeklyMenusService.setDayLock(groupId, userId, date, lock);
+  }
+
   @Get(':id')
   findById(@Param('id') id: string) {
     return this.weeklyMenusService.findById(id);
@@ -75,15 +101,5 @@ export class WeeklyMenusController {
     @CurrentUser('id') userId: string,
   ) {
     return this.weeklyMenusService.confirm(menuId, userId);
-  }
-
-  @Patch(':id/lock')
-  lockMenu(@Param('id') menuId: string, @CurrentUser('id') userId: string) {
-    return this.weeklyMenusService.lockMenu(menuId, userId);
-  }
-
-  @Patch(':id/unlock')
-  unlockMenu(@Param('id') menuId: string, @CurrentUser('id') userId: string) {
-    return this.weeklyMenusService.unlockMenu(menuId, userId);
   }
 }

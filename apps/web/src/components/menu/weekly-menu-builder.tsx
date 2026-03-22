@@ -42,6 +42,8 @@ interface WeeklyMenuBuilderProps {
   menu: WeeklyMenu | null;
   groupId: string;
   weekStart: Date;
+  selectedDay: Date;
+  menuMode: 'daily' | 'weekly';
   onConfirmed: () => void;
 }
 
@@ -49,6 +51,8 @@ export function WeeklyMenuBuilder({
   menu: initialMenu,
   groupId,
   weekStart,
+  selectedDay,
+  menuMode,
   onConfirmed,
 }: WeeklyMenuBuilderProps) {
   const [menu, setMenu] = useState<WeeklyMenu | null>(initialMenu);
@@ -68,10 +72,16 @@ export function WeeklyMenuBuilder({
   async function handleCreateMenu() {
     setLoading(true);
     try {
-      const { data } = await weeklyMenusApi.create({
-        groupId,
-        weekStartDate: weekStart.toISOString().split('T')[0],
-      });
+      const toDateStr = (d: Date) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+      const payload = menuMode === 'daily'
+        ? { groupId, weekStartDate: toDateStr(weekStart), menuDate: toDateStr(selectedDay) }
+        : { groupId, weekStartDate: toDateStr(weekStart) };
+      const { data } = await weeklyMenusApi.create(payload);
       setMenu(data);
     } catch {
       // handle error silently
@@ -157,7 +167,9 @@ export function WeeklyMenuBuilder({
   if (!menu) {
     return (
       <div className="bg-white rounded-xl border border-[#E2E8F0] p-8 text-center">
-        <p className="text-sm text-[#94A3B8] mb-4">No menu created for this week yet.</p>
+        <p className="text-sm text-[#94A3B8] mb-4">
+          {menuMode === 'daily' ? 'No menu created for this day yet.' : 'No menu created for this week yet.'}
+        </p>
         <button
           onClick={handleCreateMenu}
           disabled={loading}

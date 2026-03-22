@@ -1,4 +1,4 @@
-import { IsUUID, IsDateString } from 'class-validator';
+import { IsUUID, IsDateString, IsOptional } from 'class-validator';
 
 export class CreateWeeklyMenuDto {
   @IsUUID()
@@ -6,4 +6,8 @@ export class CreateWeeklyMenuDto {
 
   @IsDateString()
   weekStartDate: string;
+
+  @IsOptional()
+  @IsDateString()
+  menuDate?: string;
 }

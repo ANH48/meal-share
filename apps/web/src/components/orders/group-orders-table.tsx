@@ -4,6 +4,7 @@ import type { GroupOrderUser } from '@/lib/api/orders';
 
 interface Props {
   summary: GroupOrderUser[];
+  selectedDay: Date | null;
 }
 
 function formatVND(amount: number) {
@@ -21,7 +22,15 @@ function avatarColor(name: string) {
   return AVATAR_COLORS[idx % AVATAR_COLORS.length];
 }
 
-export function GroupOrdersTable({ summary }: Props) {
+export function GroupOrdersTable({ summary, selectedDay }: Props) {
+  if (!selectedDay) {
+    return (
+      <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 text-center">
+        <p className="text-sm text-[#94A3B8]">Select a day to see group orders.</p>
+      </div>
+    );
+  }
+
   if (summary.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 text-center">

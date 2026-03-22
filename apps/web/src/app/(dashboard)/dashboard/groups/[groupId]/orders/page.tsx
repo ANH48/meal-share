@@ -36,7 +36,7 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
   const { user } = useAuthStore();
   const [isLeader, setIsLeader] = useState(false);
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart());
-  const [selectedDay, setSelectedDay] = useState<Date>(() => {
+  const [selectedDay, setSelectedDay] = useState<Date | null>(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return today;
@@ -46,6 +46,7 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
   const [myWeeklyOrders, setMyWeeklyOrders] = useState<DailyOrder[]>([]);
   const [groupSummary, setGroupSummary] = useState<GroupOrderUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDayLocked, setIsDayLocked] = useState(false);
 
   useEffect(() => {
     groupsApi.getById(groupId).then(({ data }) => {
@@ -54,33 +55,55 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
   }, [groupId, user?.id]);
 
   const weekStr = toDateStr(weekStart);
-  const dayStr = toDateStr(selectedDay);
+  const dayStr = selectedDay ? toDateStr(selectedDay) : null;
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [menuRes, myDailyRes, myWeeklyRes] = await Promise.all([
-        weeklyMenusApi.getByGroupAndWeek(groupId, weekStr).catch(() => ({ data: null })),
+      if (!dayStr) {
+        const { data } = await ordersApi.getMyWeekly(groupId, weekStr).catch(() => ({ data: [] as DailyOrder[] }));
+        setMenu(null);
+        setMyOrders([]);
+        setMyWeeklyOrders((data as DailyOrder[]) ?? []);
+        return;
+      }
+      const [menuRes, myDailyRes, myWeeklyRes, lockRes] = await Promise.all([
+        weeklyMenusApi.getByGroupAndDate(groupId, dayStr).catch(() => ({ data: null })),
         ordersApi.getMyDaily(groupId, dayStr).catch(() => ({ data: [] as DailyOrder[] })),
         ordersApi.getMyWeekly(groupId, weekStr).catch(() => ({ data: [] as DailyOrder[] })),
+        weeklyMenusApi.getDayLock(groupId, dayStr).catch(() => ({ data: { isLocked: false } })),
       ]);
       setMenu((menuRes.data as WeeklyMenu | null) ?? null);
       setMyOrders((myDailyRes.data as DailyOrder[]) ?? []);
       setMyWeeklyOrders((myWeeklyRes.data as DailyOrder[]) ?? []);
+      setIsDayLocked(lockRes.data?.isLocked ?? false);
     } finally {
       setLoading(false);
     }
-  }, [groupId, weekStr, dayStr]);
+  }, [groupId, dayStr, weekStr]);
 
   const fetchGroupSummary = useCallback(async () => {
-    if (!isLeader) return;
+    if (!isLeader || !dayStr) {
+      setGroupSummary([]);
+      return;
+    }
     try {
-      const { data } = await ordersApi.getGroupWeekly(groupId, weekStr);
-      setGroupSummary(data ?? []);
+      const { data } = await ordersApi.getGroupDaily(groupId, dayStr);
+      const flat = (data ?? []) as import('@/lib/api/orders').DailyOrder[];
+      const byUser = flat.reduce<Record<string, import('@/lib/api/orders').GroupOrderUser>>((acc, o) => {
+        const uid = o.userId;
+        if (!acc[uid]) {
+          acc[uid] = { user: o.user ?? { id: uid, name: uid, email: uid }, orders: [], total: 0 };
+        }
+        acc[uid].orders.push(o);
+        acc[uid].total += Number(o.totalPrice);
+        return acc;
+      }, {});
+      setGroupSummary(Object.values(byUser));
     } catch {
       setGroupSummary([]);
     }
-  }, [groupId, weekStr, isLeader]);
+  }, [groupId, dayStr, isLeader]);
 
   useEffect(() => {
     fetchData();
@@ -97,6 +120,7 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
   }
 
   function prevWeek() {
+    setSelectedDay(null);
     setWeekStart((d) => {
       const n = new Date(d);
       n.setDate(n.getDate() - 7);
@@ -105,6 +129,7 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
   }
 
   function nextWeek() {
+    setSelectedDay(null);
     setWeekStart((d) => {
       const n = new Date(d);
       n.setDate(n.getDate() + 7);
@@ -114,14 +139,11 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
 
   const weekDays = getWeekDays(weekStart);
   const confirmedMenu = menu?.status === 'confirmed' ? menu : null;
-  const isLocked = confirmedMenu?.isLocked ?? false;
 
   async function handleToggleLock() {
     if (!confirmedMenu) return;
-    const { data } = isLocked
-      ? await weeklyMenusApi.unlock(confirmedMenu.id)
-      : await weeklyMenusApi.lock(confirmedMenu.id);
-    setMenu(data);
+    const { data } = await weeklyMenusApi.setDayLock(groupId, dayStr, !isDayLocked);
+    setIsDayLocked(data.isLocked);
   }
 
   return (
@@ -172,6 +194,13 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
+          {!selectedDay ? (
+            <div className="bg-white rounded-xl border border-dashed border-[#E2E8F0] p-10 flex flex-col items-center justify-center text-center gap-2">
+              <Calendar size={28} className="text-[#CBD5E1] mb-1" />
+              <p className="text-sm font-semibold text-[#1E293B]">You need to select a day</p>
+              <p className="text-xs text-[#94A3B8]">Pick a day above to view or place your order.</p>
+            </div>
+          ) : (
           <div className="bg-white rounded-xl border border-[#E2E8F0] p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -179,7 +208,7 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
                 <h3 className="text-sm font-semibold text-[#1E293B]">
                   Order for {formatDateLabel(selectedDay)}
                 </h3>
-                {isLocked && (
+                {isDayLocked && (
                   <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-500">
                     <Lock size={10} />
                     Locked
@@ -190,13 +219,13 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
                 <button
                   onClick={handleToggleLock}
                   className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${
-                    isLocked
+                    isDayLocked
                       ? 'border-green-200 text-green-600 hover:bg-green-50'
                       : 'border-red-200 text-red-500 hover:bg-red-50'
                   }`}
                 >
-                  {isLocked ? <LockOpen size={12} /> : <Lock size={12} />}
-                  {isLocked ? 'Unlock Orders' : 'Lock Orders'}
+                  {isDayLocked ? <LockOpen size={12} /> : <Lock size={12} />}
+                  {isDayLocked ? 'Unlock Orders' : 'Lock Orders'}
                 </button>
               )}
             </div>
@@ -208,7 +237,7 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
               </div>
             ) : !confirmedMenu ? (
               <p className="text-sm text-[#94A3B8] text-center py-4">
-                No confirmed menu for this week. Ask your group leader to set up the menu first.
+                No confirmed menu for this day. Ask your group leader to set up the menu first.
               </p>
             ) : !confirmedMenu.items || confirmedMenu.items.length === 0 ? (
               <p className="text-sm text-[#94A3B8] text-center py-4">No menu items available.</p>
@@ -216,23 +245,25 @@ export default function GroupOrdersPage({ params }: { params: Promise<{ groupId:
               <DailyOrderForm
                 menu={confirmedMenu}
                 groupId={groupId}
-                date={dayStr}
+                date={dayStr!}
                 existingOrders={myOrders.filter((o) => o.date.split('T')[0] === dayStr)}
                 onOrdersChange={handleOrdersChange}
-                isLocked={isLocked}
+                onRefetch={fetchData}
+                isLocked={isDayLocked}
               />
             )}
           </div>
+          )}
         </div>
 
         <div>
-          <OrderSummary orders={myWeeklyOrders} />
+          <OrderSummary orders={myWeeklyOrders} selectedDay={selectedDay} />
         </div>
       </div>
 
       {isLeader && (
         <div className="mt-6">
-          <GroupOrdersTable summary={groupSummary} />
+          <GroupOrdersTable summary={groupSummary} selectedDay={selectedDay} />
         </div>
       )}
     </div>

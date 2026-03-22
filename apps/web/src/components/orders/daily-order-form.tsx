@@ -11,6 +11,7 @@ interface Props {
   date: string;
   existingOrders: DailyOrder[];
   onOrdersChange: (orders: DailyOrder[]) => void;
+  onRefetch?: () => void;
   isLocked?: boolean;
 }
 
@@ -18,10 +19,11 @@ function formatVND(amount: number) {
   return new Intl.NumberFormat('vi-VN').format(amount) + '₫';
 }
 
-export function DailyOrderForm({ menu, groupId, date, existingOrders, onOrdersChange, isLocked = false }: Props) {
+export function DailyOrderForm({ menu, groupId, date, existingOrders, onOrdersChange, onRefetch, isLocked = false }: Props) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Sync local quantities when existingOrders or date changes
   useEffect(() => {
@@ -71,15 +73,38 @@ export function DailyOrderForm({ menu, groupId, date, existingOrders, onOrdersCh
       onOrdersChange(updatedOrders);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Something went wrong. Please try again.';
+      setErrorMsg(msg);
     } finally {
       setSaving(false);
     }
   }
 
+  function handleErrorOk() {
+    setErrorMsg(null);
+    onRefetch?.();
+  }
+
   return (
     <div className="space-y-3">
+      {errorMsg && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4 text-center">
+            <p className="text-2xl mb-2">😅</p>
+            <h3 className="text-base font-bold text-[#1E293B] mb-1">Oops!</h3>
+            <p className="text-sm text-[#64748B] mb-5">{errorMsg}</p>
+            <button
+              onClick={handleErrorOk}
+              className="w-full h-10 bg-[#F97316] text-white text-sm font-semibold rounded-lg hover:bg-[#EA6A00] transition-colors cursor-pointer"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
       {items.map((item) => {
         const qty = quantities[item.id] ?? 0;
         return (

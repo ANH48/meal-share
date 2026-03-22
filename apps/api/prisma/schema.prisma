@@ -76,6 +76,7 @@ model Group {
   votes       Vote[]
   dailyOrders DailyOrder[]
   messages    GroupMessage[]
+  dayLocks    GroupDayLock[]
   groupDishes MenuItem[]     @relation("GroupDishes")
 
   @@map("groups")
@@ -120,6 +121,7 @@ model WeeklyMenu {
   id            String           @id @default(uuid()) @db.Uuid
   groupId       String           @map("group_id") @db.Uuid
   weekStartDate DateTime         @map("week_start_date") @db.Date
+  menuDate      DateTime?        @map("menu_date") @db.Date
   status        WeeklyMenuStatus @default(draft)
   isLocked      Boolean          @default(false) @map("is_locked")
   createdBy     String           @map("created_by") @db.Uuid
@@ -129,7 +131,6 @@ model WeeklyMenu {
   creator User           @relation(fields: [createdBy], references: [id])
   items   WeeklyMenuItem[]
 
-  @@unique([groupId, weekStartDate, status])
   @@map("weekly_menus")
 }
 
@@ -209,6 +210,17 @@ model DailyOrder {
 
   @@unique([userId, groupId, date, weeklyMenuItemId])
   @@map("daily_orders")
+}
+
+model GroupDayLock {
+  id        String   @id @default(uuid()) @db.Uuid
+  groupId   String   @map("group_id") @db.Uuid
+  date      DateTime @db.Date
+
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@unique([groupId, date])
+  @@map("group_day_locks")
 }
 
 model GroupMessage {

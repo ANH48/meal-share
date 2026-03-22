@@ -4,6 +4,7 @@ import type { DailyOrder } from '@/lib/api/orders';
 
 interface Props {
   orders: DailyOrder[];
+  selectedDay: Date | null;
 }
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -17,7 +18,15 @@ function formatDate(dateStr: string) {
   return `${DAY_LABELS[(d.getDay() + 6) % 7]} ${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-export function OrderSummary({ orders }: Props) {
+export function OrderSummary({ orders, selectedDay }: Props) {
+  if (!selectedDay) {
+    return (
+      <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 text-center">
+        <p className="text-sm text-[#94A3B8]">Select a day to see your weekly summary.</p>
+      </div>
+    );
+  }
+
   if (orders.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 text-center">

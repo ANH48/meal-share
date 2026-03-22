@@ -11,8 +11,6 @@ import {
   Users,
   Settings,
   LogOut,
-  Compass,
-  Mail,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { api } from '@/lib/api';
@@ -28,9 +26,6 @@ const ADMIN_NAV = [
 
 const USER_NAV = [
   { label: 'My Groups', href: '/dashboard/groups', icon: LayoutGrid },
-  { label: 'Discover', href: '/dashboard/discover', icon: Compass },
-  { label: 'Invitations', href: '/dashboard/invitations', icon: Mail },
-  { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {

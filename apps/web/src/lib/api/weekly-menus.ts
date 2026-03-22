@@ -21,21 +21,26 @@ export interface WeeklyMenu {
   id: string;
   groupId: string;
   weekStartDate: string;
+  menuDate?: string | null;
   status: 'draft' | 'confirmed';
   isLocked: boolean;
   createdBy: string;
   createdAt: string;
   items?: WeeklyMenuItem[];
+  menuType?: 'daily' | 'weekly';
 }
 
 export const weeklyMenusApi = {
   getByGroupAndWeek: (groupId: string, weekStart: string) =>
     api.get<WeeklyMenu>('/weekly-menus', { params: { groupId, weekStart } }),
 
+  getByGroupAndDate: (groupId: string, date: string) =>
+    api.get<WeeklyMenu | null>('/weekly-menus/by-date', { params: { groupId, date } }),
+
   getById: (id: string) =>
     api.get<WeeklyMenu>(`/weekly-menus/${id}`),
 
-  create: (data: { groupId: string; weekStartDate: string }) =>
+  create: (data: { groupId: string; weekStartDate: string; menuDate?: string }) =>
     api.post<WeeklyMenu>('/weekly-menus', data),
 
   addItem: (menuId: string, data: { menuItemId: string; price: number }) =>
@@ -50,9 +55,9 @@ export const weeklyMenusApi = {
   confirm: (menuId: string) =>
     api.patch<WeeklyMenu>(`/weekly-menus/${menuId}/confirm`),
 
-  lock: (menuId: string) =>
-    api.patch<WeeklyMenu>(`/weekly-menus/${menuId}/lock`),
+  getDayLock: (groupId: string, date: string) =>
+    api.get<{ isLocked: boolean }>('/weekly-menus/day-lock', { params: { groupId, date } }),
 
-  unlock: (menuId: string) =>
-    api.patch<WeeklyMenu>(`/weekly-menus/${menuId}/unlock`),
+  setDayLock: (groupId: string, date: string, lock: boolean) =>
+    api.patch<{ isLocked: boolean }>('/weekly-menus/day-lock', { groupId, date, lock }),
 };
